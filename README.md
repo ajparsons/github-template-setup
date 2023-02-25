@@ -1,6 +1,6 @@
 # github-template-setup
 
-Version: 0.1.4
+Version: 0.1.5
 
 Common action between Github-based repo templates. Based on @simonw approach.
 
