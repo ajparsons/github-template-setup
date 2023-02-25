@@ -1,6 +1,10 @@
 # From https://raw.githubusercontent.com/simonw/python-lib-template-repository/main/.github/workflows/setup.yml
 name: Execute template to populate repository
 
+permissions:
+  actions: write
+  contents: write
+
 on:
   push:
   workflow_dispatch:
