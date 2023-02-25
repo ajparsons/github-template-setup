@@ -1,6 +1,6 @@
 name: 'github-template-setup'
 description: 'Common action between Github-based repo templates. Based on @simonw approach.'
-version: 0.1.1
+version: 0.1.2
 
 runs:
   using: "composite"
@@ -55,6 +55,7 @@ runs:
           return result
 
     - name: Rebuild contents using cookiecutter
+      shell: bash
       env:
         INFO: ${{ steps.fetch-repo-and-user-details.outputs.result }}
         ENV_PATH: /tmp/template-venv/
