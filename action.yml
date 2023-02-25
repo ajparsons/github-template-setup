@@ -57,6 +57,7 @@ runs:
     - name: Rebuild contents using cookiecutter
       env:
         INFO: ${{ steps.fetch-repo-and-user-details.outputs.result }}
+        ENV_PATH: /tmp/template-venv/
       run: |
         export REPO_NAME=$(echo $INFO | jq -r '.repository.name')
         pushd /tmp
@@ -75,5 +76,3 @@ runs:
         mv /tmp/$REPO_NAME/* .
         mv /tmp/$REPO_NAME/.[!.]* .
         mv /tmp/git-store .git
-      env:
-        VENV_PATH: /tmp/template-venv/
