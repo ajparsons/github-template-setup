@@ -27,7 +27,7 @@ runs:
       env:
         VENV_PATH: /tmp/template-venv/
 
-    - uses: actions/github-script@v4
+    - uses: actions/github-script@v6
       id: fetch-repo-and-user-details
       with:
         script: |
@@ -58,7 +58,7 @@ runs:
       shell: bash
       env:
         INFO: ${{ steps.fetch-repo-and-user-details.outputs.result }}
-        ENV_PATH: /tmp/template-venv/
+        VENV_PATH: /tmp/template-venv/
       run: |
         export REPO_NAME=$(echo $INFO | jq -r '.repository.name')
         pushd /tmp
