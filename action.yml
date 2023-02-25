@@ -1,30 +1,78 @@
 name: 'github-template-setup'
-description: 'Common action between Github based repo templates'
-version: 0.0.1
-
-inputs:
-  example_input: 
-    description: 'Example input'
-    required: true
-outputs:
-  example_output:
-    description: "The repo of 'user/repo'."
-    value: ${{ steps.example_step.outputs.repo_name }}
+description: 'Common action between Github-based repo templates. Based on @simonw approach.'
+version: 0.1.0
 
 runs:
   using: "composite"
-  steps:
+  env:
+    VENV_PATH: /tmp/template-venv/
 
-    - name: Test if this action is being referenced safely
+  steps:
+    - name: Self warning
       uses: ajparsons/sha-version-warning@53c5e9cbf96afb276cb2cf486ebd45c5d5db0e11 # v1.0.1
       with: 
         action_path: ${{ github.action_path }}
 
-    - name: Example step
-      id: example_step
+    - name: Setup python
+      uses: actions/setup-python@v4
+      id: python
+      with:
+        python-version: 3.10
+        update-environment: false
+
+    - name: Setup venv
+      id: setup_venv
       shell: bash
       run: |
-        echo "example_output=hello world $EXAMPLE_INPUT" >> $GITHUB_OUTPUT
+        ${{ steps.python.outputs.python-path }} -m venv $VENV_PATH
+        source $VENV_PATH/bin/activate
+        pip install cookiecutter==2.1.1
+
+    - uses: actions/github-script@v4
+      id: fetch-repo-and-user-details
+      with:
+        script: |
+          const query = `query($owner:String!, $name:String!) {
+            repository(owner:$owner, name:$name) {
+              name
+              description
+              owner {
+                login
+                ... on User {
+                  name
+                }
+                ... on Organization {
+                  name
+                }
+              }
+            }
+          }`;
+          const variables = {
+            owner: context.repo.owner,
+            name: context.repo.repo
+          }
+          const result = await github.graphql(query, variables)
+          console.log(result)
+          return result
+
+    - name: Rebuild contents using cookiecutter
       env:
-        EXAMPLE_INPUT: ${{ inputs.example_input }}
-    
+        INFO: ${{ steps.fetch-repo-and-user-details.outputs.result }}
+      run: |
+        export REPO_NAME=$(echo $INFO | jq -r '.repository.name')
+        pushd /tmp
+        source $VENV_PATH/bin/activate
+        cookiecutter $GITHUB_WORKSPACE --no-input \
+          lib_name=$REPO_NAME \
+          description="$(echo $INFO | jq -r .repository.description)" \
+          github_username="$(echo $INFO | jq -r .repository.owner.login)" \
+          author_name="$(echo $INFO | jq -r .repository.owner.name)" \
+          author_email="${{ github.event.pusher.email }}" \
+          github_id=$GITHUB_REPOSITORY
+        popd
+        mv .git /tmp/git-store
+        rm -r ./*
+        rm -r ./.[!.]* 
+        mv /tmp/$REPO_NAME/* .
+        mv /tmp/$REPO_NAME/.[!.]* .
+        mv /tmp/git-store .git
